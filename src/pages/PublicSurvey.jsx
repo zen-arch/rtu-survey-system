@@ -218,7 +218,11 @@ function PublicSurvey({ startAtForm }) {
             average_rating: averageRating,
             visit_type: visitType,
             feedback: feedback,
-            status: 'Normal'
+            status: 'Normal',
+            custom_answers: customQuestions.length > 0 ? JSON.stringify({
+              questions: customQuestions,
+              answers: customAnswers
+            }) : null
           })
         if (error) throw error
 

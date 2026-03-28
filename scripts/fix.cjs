@@ -1,35 +1,64 @@
 const fs = require('fs')
 
-let content = fs.readFileSync('src/pages/PublicSurvey.jsx', 'utf8')
+let content = fs.readFileSync('src/components/ResultsTable.jsx', 'utf8')
 
-const idx = content.indexOf('averageRating = (')
-console.log('Found at index:', idx)
-console.log('Context:', content.substring(idx-20, idx+20))
+const idx = content.indexOf('Ratings Breakdown')
 
-const newCalc = `averageRating = (() => {
-    if (customQuestions && customQuestions.length > 0) {
-      const ratingAnswers = customQuestions
-        .filter(q => q.type === 'rating')
-        .map(q => Number(customAnswers[q.id] || 0))
-      if (ratingAnswers.length > 0) {
-        return (ratingAnswers.reduce((sum, val) => sum + val, 0) / ratingAnswers.length).toFixed(1)
-      }
-      return '5.0'
-    }
-    return ((ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5).toFixed(1)
-  })()`
+// Find start of the array
+const startIdx = content.indexOf("{[\r\n          { label: 'Overall Satisfaction'", idx)
+console.log('Start found at:', startIdx)
 
-// Find the full averageRating declaration
-const startIdx = content.indexOf('const averageRating = (')
-const endIdx = content.indexOf('.toFixed(1)', startIdx) + '.toFixed(1)'.length
+if (startIdx !== -1) {
+  // Find end - look for the closing pattern
+  const endMarker = "        ))}\r\n      </div>"
+  const endIdx = content.indexOf(endMarker, startIdx) + endMarker.length
+  console.log('End found at:', endIdx)
 
-if (startIdx === -1) {
-  console.log('ERROR: Could not find const averageRating!')
-} else {
-  console.log('Replacing from', startIdx, 'to', endIdx)
-  const before = content.substring(0, startIdx + 6) // keep 'const '
-  const after = content.substring(endIdx)
-  content = before + newCalc + after
-  fs.writeFileSync('src/pages/PublicSurvey.jsx', content, 'utf8')
+  const newBlock = `{(() => {
+          if (selectedResponse.custom_answers) {
+            try {
+              const customData = JSON.parse(selectedResponse.custom_answers)
+              const questions = customData.questions || []
+              const answers = customData.answers || {}
+              return questions.map((q, index) => (
+                <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E0E7FF' }}>
+                  <span style={{ fontSize: '14px', color: '#1A1A2E' }}>{q.text}</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {q.type === 'rating' ? (
+                      [1,2,3,4,5].map(star => (
+                        <span key={star} style={{ color: star <= (answers[q.id] || 0) ? '#FFD700' : '#E0E7FF', fontSize: '18px' }}>★</span>
+                      ))
+                    ) : (
+                      <span style={{ fontSize: '14px', color: '#1A1A2E' }}>{answers[q.id] || 'N/A'}</span>
+                    )}
+                  </div>
+                </div>
+              ))
+            } catch (e) { return null }
+          } else {
+            return [
+              { label: 'Overall Satisfaction', value: selectedResponse.rating_overall },
+              { label: 'Staff Professionalism', value: selectedResponse.rating_staff },
+              { label: 'Speed & Efficiency', value: selectedResponse.rating_speed },
+              { label: 'Cleanliness & Comfort', value: selectedResponse.rating_cleanliness },
+              { label: 'Recommendation', value: selectedResponse.rating_recommendation }
+            ].map((item, index) => (
+              <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E0E7FF' }}>
+                <span style={{ fontSize: '14px', color: '#1A1A2E' }}>{item.label}</span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[1,2,3,4,5].map(star => (
+                    <span key={star} style={{ color: star <= (item.value || 0) ? '#FFD700' : '#E0E7FF', fontSize: '18px' }}>★</span>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        })()}
+      </div>`
+
+  content = content.substring(0, startIdx) + newBlock + content.substring(endIdx)
+  fs.writeFileSync('src/components/ResultsTable.jsx', content, 'utf8')
   console.log('Done!')
+} else {
+  console.log('Still not found!')
 }
