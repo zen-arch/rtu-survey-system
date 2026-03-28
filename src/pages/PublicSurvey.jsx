@@ -171,9 +171,18 @@ function PublicSurvey({ startAtForm }) {
   const handleSubmit = async () => {
     if (!validateStep3()) return
 
-    const averageRating = (
-      (ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5
-    ).toFixed(1)
+    const averageRating = (() => {
+    if (customQuestions && customQuestions.length > 0) {
+      const ratingAnswers = customQuestions
+        .filter(q => q.type === 'rating')
+        .map(q => Number(customAnswers[q.id] || 0))
+      if (ratingAnswers.length > 0) {
+        return (ratingAnswers.reduce((sum, val) => sum + val, 0) / ratingAnswers.length).toFixed(1)
+      }
+      return '5.0'
+    }
+    return ((ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5).toFixed(1)
+  })()
 
     try {
       if (isEditing && editingId) {
