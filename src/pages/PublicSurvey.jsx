@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { GraduationCap, AlertTriangle, Check, Star, X } from 'lucide-react'
+import { AlertTriangle, Check, Star, X } from 'lucide-react'
 import StarRating from '../components/StarRating'
 import { supabase } from '../utils/supabaseClient'
 
@@ -277,14 +277,17 @@ function PublicSurvey({ startAtForm }) {
     }
   }
 
+  const Header = () => (
+    <div style={{ backgroundColor: '#0033A0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+      <img src="/rtu_logo.png" alt="RTU Logo" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+      <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>RTU Client Satisfaction Survey System</h1>
+    </div>
+  )
+
   if (submitted) {
-    const avg = ((ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5).toFixed(1)
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#F5F7FA' }}>
-        <div style={{ backgroundColor: '#0033A0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          <GraduationCap size={24} color="#FFFFFF" />
-          <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>RTU Client Satisfaction Survey System</h1>
-        </div>
+        <Header />
         <div style={{ maxWidth: '500px', margin: '60px auto', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '40px', textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
           <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#0033A0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <Check size={50} color="#FFD700" />
@@ -303,10 +306,7 @@ function PublicSurvey({ startAtForm }) {
   if (showSurvey) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#F5F7FA' }}>
-        <div style={{ backgroundColor: '#0033A0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          <GraduationCap size={24} color="#FFFFFF" />
-          <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>RTU Client Satisfaction Survey System</h1>
-        </div>
+        <Header />
         <div style={{ maxWidth: '700px', margin: '40px auto', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
           <StepIndicator currentStep={currentStep - 1} steps={['Rate Our Service', 'Your Feedback']} />
 
@@ -384,10 +384,7 @@ function PublicSurvey({ startAtForm }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F5F7FA' }}>
-      <div style={{ backgroundColor: '#0033A0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-        <GraduationCap size={24} color="#FFFFFF" />
-        <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>RTU Client Satisfaction Survey System</h1>
-      </div>
+      <Header />
       <div style={{ maxWidth: '500px', margin: '60px auto', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '40px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#0033A0', marginBottom: '8px' }}>Welcome!</h2>
@@ -440,3 +437,4 @@ function PublicSurvey({ startAtForm }) {
 }
 
 export default PublicSurvey
+

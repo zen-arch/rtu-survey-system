@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Star, GraduationCap } from 'lucide-react'
+import { Check, Star } from 'lucide-react'
 import { supabase } from '../utils/supabaseClient'
 
 const OFFICES = ['Cashier', 'Registrar', 'Clinic', 'MIC/MISO', 'SAASU', 'BAO', 'SFAU']

@@ -7,7 +7,6 @@ import {
   FileBarChart,
   Settings,
   ArrowRight,
-  GraduationCap,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -68,7 +67,7 @@ function Sidebar() {
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon" style={collapsed ? { width: '40px', height: '40px' } : {}}>
-            <GraduationCap size={collapsed ? 24 : 28} />
+            <img src="/rtu_logo.png" alt="RTU Logo" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
           </div>
           {!collapsed && (
             <div className="sidebar-logo-text">

@@ -15,7 +15,6 @@ import {
   Wifi,
   Users,
   Wallet,
-  GraduationCap,
   ClipboardPen,
   Edit2,
   Trash2
@@ -247,9 +246,7 @@ function StudentDashboard() {
         {/* Logo */}
         <div style={{ padding: '0 24px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FFD700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: '#0033A0', fontWeight: '700', fontSize: '14px' }}>RTU</span>
-            </div>
+            <img src="/rtu_logo.png" alt="RTU Logo" style={{ width: '44px', height: '44px', borderRadius: '50%' }} />
             <div>
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#FFFFFF', lineHeight: 1.3 }}>Survey System</div>
             </div>
