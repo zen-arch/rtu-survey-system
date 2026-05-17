@@ -52,9 +52,14 @@ function Sidebar() {
       icon: FileBarChart 
     },
     { 
-      path: '/admin/settings', 
-      label: 'Settings', 
-      icon: Settings 
+      path: '/admin/settings',
+      label: 'Settings',
+      icon: Settings
+    },
+    { 
+      path: '/admin/offices',
+      label: 'Offices',
+      icon: Table
     }
   ]
 

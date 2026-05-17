@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { supabase } from '../utils/supabaseClient'
 
-const OFFICES = ['Cashier', 'Registrar', 'Clinic', 'MIC/MISO', 'SAASU', 'BAO', 'SFAU']
 const PERIODS = ['Monthly', 'Quarterly', 'Yearly']
 
 /**
@@ -23,6 +22,8 @@ function SurveyBuilder() {
   const navigate = useNavigate()
   const location = useLocation()
   
+  const [offices, setOffices] = useState([])
+
   const [survey, setSurvey] = useState({
     title: '',
     instructions: '',
@@ -33,6 +34,18 @@ function SurveyBuilder() {
   })
 
   const [hasError, setHasError] = useState(false)
+
+  // Fetch offices dynamically from Supabase
+  useEffect(() => {
+    const fetchOffices = async () => {
+      const { data, error } = await supabase
+        .from('offices')
+        .select('office_id, office_name')
+        .order('office_name', { ascending: true })
+      if (!error && data) setOffices(data)
+    }
+    fetchOffices()
+  }, [])
 
   // Pre-fill form if editing existing survey
   useEffect(() => {
@@ -261,7 +274,7 @@ function SurveyBuilder() {
             />
           </div>
 
-          {/* Target Office */}
+          {/* Target Office — now dynamic from Supabase */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#6c757d', marginBottom: '8px' }}>
               Target Office
@@ -281,8 +294,10 @@ function SurveyBuilder() {
               }}
             >
               <option value="">Select Office</option>
-              {OFFICES.map(office => (
-                <option key={office} value={office}>{office}</option>
+              {offices.map(office => (
+                <option key={office.office_id} value={office.office_name}>
+                  {office.office_name}
+                </option>
               ))}
             </select>
           </div>
@@ -352,13 +367,11 @@ function SurveyBuilder() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  {/* Drag Handle */}
                   <div style={{ cursor: 'grab', color: '#adb5bd', paddingTop: '8px' }}>
                     <GripVertical size={20} />
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    {/* Question Text */}
                     <input
                       type="text"
                       placeholder="Enter your question"
@@ -375,7 +388,6 @@ function SurveyBuilder() {
                       }}
                     />
 
-                    {/* Question Type & Required */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                       <select
                         value={question.type}
@@ -404,16 +416,11 @@ function SurveyBuilder() {
                       </label>
                     </div>
 
-                    {/* Multiple Choice Options */}
                     {question.type === 'multiple' && (
                       <div style={{ marginTop: '8px' }}>
                         {question.options.map((option, optIndex) => (
                           <div key={optIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                            <input
-                              type="radio"
-                              disabled
-                              style={{ marginTop: '8px' }}
-                            />
+                            <input type="radio" disabled style={{ marginTop: '8px' }} />
                             <input
                               type="text"
                               value={option}
@@ -430,13 +437,7 @@ function SurveyBuilder() {
                             {question.options.length > 2 && (
                               <button
                                 onClick={() => removeOption(question.id, optIndex)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#DC2626',
-                                  cursor: 'pointer',
-                                  padding: '4px'
-                                }}
+                                style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: '4px' }}
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -462,16 +463,9 @@ function SurveyBuilder() {
                     )}
                   </div>
 
-                  {/* Delete Button */}
                   <button
                     onClick={() => deleteQuestion(question.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#DC2626',
-                      cursor: 'pointer',
-                      padding: '8px'
-                    }}
+                    style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: '8px' }}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -497,15 +491,10 @@ function SurveyBuilder() {
             <button
               onClick={handleSaveDraft}
               style={{
-                flex: 1,
-                padding: '14px',
-                backgroundColor: '#FFFFFF',
-                color: '#0033A0',
-                border: '2px solid #0033A0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer'
+                flex: 1, padding: '14px',
+                backgroundColor: '#FFFFFF', color: '#0033A0',
+                border: '2px solid #0033A0', borderRadius: '8px',
+                fontSize: '14px', fontWeight: '600', cursor: 'pointer'
               }}
             >
               Save as Draft
@@ -513,15 +502,10 @@ function SurveyBuilder() {
             <button
               onClick={handlePublish}
               style={{
-                flex: 1,
-                padding: '14px',
-                backgroundColor: '#0033A0',
-                color: '#FFFFFF',
-                border: '2px solid #0033A0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer'
+                flex: 1, padding: '14px',
+                backgroundColor: '#0033A0', color: '#FFFFFF',
+                border: '2px solid #0033A0', borderRadius: '8px',
+                fontSize: '14px', fontWeight: '600', cursor: 'pointer'
               }}
               onMouseOver={(e) => e.target.style.borderColor = '#FFD700'}
               onMouseOut={(e) => e.target.style.borderColor = '#0033A0'}
@@ -530,7 +514,6 @@ function SurveyBuilder() {
             </button>
           </div>
 
-          {/* Shareable Link */}
           {showLink && (
             <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#F5F7FA', borderRadius: '8px' }}>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1A1A2E', marginBottom: '8px' }}>
@@ -541,28 +524,16 @@ function SurveyBuilder() {
                   type="text"
                   value={`https://rtu.edu.ph/survey/${Date.now()}`}
                   readOnly
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #E0E7FF',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    backgroundColor: '#FFFFFF'
-                  }}
+                  style={{ flex: 1, padding: '10px 12px', border: '1px solid #E0E7FF', borderRadius: '6px', fontSize: '13px', backgroundColor: '#FFFFFF' }}
                 />
                 <button
                   onClick={copyLink}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
+                    display: 'flex', alignItems: 'center', gap: '6px',
                     padding: '10px 16px',
                     backgroundColor: copied ? '#16A34A' : '#0033A0',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    cursor: 'pointer'
+                    color: '#FFFFFF', border: 'none', borderRadius: '6px',
+                    fontSize: '13px', cursor: 'pointer'
                   }}
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -584,31 +555,9 @@ function SurveyBuilder() {
             Preview
           </h3>
 
-          {/* Phone Frame */}
-          <div style={{
-            border: '3px solid #E0E7FF',
-            borderRadius: '24px',
-            padding: '20px',
-            minHeight: '500px',
-            backgroundColor: '#FFFFFF'
-          }}>
-            {/* Preview Header */}
-            <div style={{ 
-              textAlign: 'center', 
-              paddingBottom: '16px', 
-              borderBottom: '1px solid #E0E7FF',
-              marginBottom: '16px'
-            }}>
-              <div style={{ 
-                width: '48px', 
-                height: '48px', 
-                borderRadius: '50%', 
-                backgroundColor: '#0033A0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
+          <div style={{ border: '3px solid #E0E7FF', borderRadius: '24px', padding: '20px', minHeight: '500px', backgroundColor: '#FFFFFF' }}>
+            <div style={{ textAlign: 'center', paddingBottom: '16px', borderBottom: '1px solid #E0E7FF', marginBottom: '16px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#0033A0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                 <span style={{ color: '#FFD700', fontWeight: '700', fontSize: '16px' }}>RTU</span>
               </div>
               <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#1A1A2E', marginBottom: '4px' }}>
@@ -619,7 +568,6 @@ function SurveyBuilder() {
               </p>
             </div>
 
-            {/* Preview Questions */}
             {survey.questions.length > 0 ? (
               survey.questions.map((q, idx) => (
                 <div key={q.id} style={{ marginBottom: '20px' }}>
@@ -631,20 +579,7 @@ function SurveyBuilder() {
                   {q.type === 'rating' && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {[1, 2, 3, 4, 5].map(n => (
-                        <div
-                          key={n}
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            border: '2px solid #E0E7FF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            color: '#6c757d'
-                          }}
-                        >
+                        <div key={n} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#6c757d' }}>
                           {n}
                         </div>
                       ))}
@@ -663,19 +598,7 @@ function SurveyBuilder() {
                   )}
 
                   {q.type === 'text' && (
-                    <textarea
-                      placeholder="Type your answer here..."
-                      rows={3}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #E0E7FF',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        resize: 'none'
-                      }}
-                      readOnly
-                    />
+                    <textarea placeholder="Type your answer here..." rows={3} style={{ width: '100%', padding: '10px', border: '1px solid #E0E7FF', borderRadius: '6px', fontSize: '13px', resize: 'none' }} readOnly />
                   )}
                 </div>
               ))
@@ -686,21 +609,8 @@ function SurveyBuilder() {
               </div>
             )}
 
-            {/* Submit Button in Preview */}
             {survey.questions.length > 0 && (
-              <button
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  backgroundColor: '#0033A0',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginTop: '16px'
-                }}
-              >
+              <button style={{ width: '100%', padding: '12px', backgroundColor: '#0033A0', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', marginTop: '16px' }}>
                 Submit Response
               </button>
             )}
@@ -712,4 +622,3 @@ function SurveyBuilder() {
 }
 
 export default SurveyBuilder
-

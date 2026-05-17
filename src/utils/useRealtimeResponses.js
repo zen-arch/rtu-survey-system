@@ -34,6 +34,8 @@ export function useRealtimeResponses() {
 
   // Real-time Supabase subscription
   useEffect(() => {
+    if (!supabase) return
+
     const subscription = supabase
       .channel('survey_responses_global')
       .on('postgres_changes',
@@ -69,4 +71,5 @@ export function useRealtimeResponses() {
     toastMessage 
   }
 }
+
 

@@ -1,6 +1,10 @@
 import { supabase } from './supabaseClient'
 
 export async function getAllResponses() {
+  if (!supabase) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('survey_responses')
     .select('*')
@@ -12,4 +16,5 @@ export async function getAllResponses() {
   }
   return data
 }
+
 

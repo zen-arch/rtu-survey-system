@@ -10,6 +10,7 @@ import SurveyForm from './pages/SurveyForm'
 import PublicSurvey from './pages/PublicSurvey'
 import StudentDashboard from './pages/StudentDashboard'
 import { ProtectedRoute, Unauthorized } from './utils/AuthContext'
+import AdminOffices from './pages/AdminOffices'
 
 // Admin Layout Component
 function AdminLayout() {
@@ -23,6 +24,7 @@ function AdminLayout() {
           <Route path="surveys" element={<Surveys />} />
           <Route path="results" element={<Results />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="offices" element={<AdminOffices />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Routes>
       </main>

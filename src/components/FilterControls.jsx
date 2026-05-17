@@ -1,11 +1,14 @@
 import { Calendar } from 'lucide-react'
-import { OFFICES, CLIENT_TYPES } from '../data/mockData'
+import { CLIENT_TYPES } from '../data/mockData'
+import { useOffices } from '../utils/useOffices'
 
 /**
  * FilterControls Component
  * Provides filtering options for date range, office/service, and client type
  */
 function FilterControls({ filters, onFilterChange }) {
+  const { offices } = useOffices()
+
   return (
     <div className="filter-controls">
       <div className="filter-row">
@@ -42,9 +45,9 @@ function FilterControls({ filters, onFilterChange }) {
             onChange={(e) => onFilterChange('office', e.target.value)}
           >
             <option value="">All Offices</option>
-            {OFFICES.map((office) => (
-              <option key={office} value={office}>
-                {office}
+            {offices.map((o) => (
+              <option key={o.office_id} value={o.office_name}>
+                {o.office_name}
               </option>
             ))}
           </select>

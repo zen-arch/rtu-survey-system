@@ -1,7 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://gmgcyxjcubbcutldakpq.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtZ2N5eGpjdWJiY3V0bGRha3BxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NjQwODAsImV4cCI6MjA4ODQ0MDA4MH0.BzwtpuHZqDSoMCJWimF7i0VkcbqYLNEgID-Z3Q618og'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
+}
+
+// Create a safe (non-crashing) client. If env vars are missing, UI pages should handle the
+// resulting error states rather than throwing at import time.
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
