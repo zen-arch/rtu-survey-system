@@ -11,8 +11,9 @@ import PublicSurvey from './pages/PublicSurvey'
 import StudentDashboard from './pages/StudentDashboard'
 import { ProtectedRoute, Unauthorized } from './utils/AuthContext'
 import AdminOffices from './pages/AdminOffices'
+import StaffDashboard from './pages/StaffDashboard'
+import AdminStaff from './pages/AdminStaff'
 
-// Admin Layout Component
 function AdminLayout() {
   return (
     <div className="app-container">
@@ -25,6 +26,7 @@ function AdminLayout() {
           <Route path="results" element={<Results />} />
           <Route path="reports" element={<Reports />} />
           <Route path="offices" element={<AdminOffices />} />
+          <Route path="staff-accounts" element={<AdminStaff />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Routes>
       </main>
@@ -35,50 +37,22 @@ function AdminLayout() {
 function App() {
   return (
     <Routes>
-      {/* Login Page */}
       <Route path="/login" element={<Login />} />
-      
-      {/* Unauthorized Page */}
       <Route path="/unauthorized" element={<Unauthorized />} />
-      
-      {/* Public Survey Landing Page */}
       <Route path="/survey" element={<PublicSurvey />} />
-      
-      {/* Survey Form Direct Access */}
       <Route path="/survey/form" element={<PublicSurvey startAtForm={true} />} />
-      
-      {/* Student Dashboard - Public (anyone with email can access) */}
       <Route path="/student/dashboard" element={<StudentDashboard />} />
-      
-      {/* Actual Survey Form */}
       <Route path="/survey-form" element={<SurveyForm />} />
-      
-      {/* Staff Dashboard - Protected */}
       <Route path="/staff/dashboard" element={
         <ProtectedRoute requiredRole="staff">
-          <div style={{ 
-            minHeight: '100vh', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            backgroundColor: '#0033A0',
-            color: '#FFFFFF',
-            fontSize: '24px',
-            fontWeight: '600'
-          }}>
-            Staff Dashboard - Coming Soon
-          </div>
+          <StaffDashboard />
         </ProtectedRoute>
       } />
-      
-      {/* Admin Routes - Protected */}
       <Route path="/admin/*" element={
         <ProtectedRoute requiredRole="admin">
           <AdminLayout />
         </ProtectedRoute>
       } />
-      
-      {/* Default redirect */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
@@ -86,4 +60,3 @@ function App() {
 }
 
 export default App
-

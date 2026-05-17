@@ -1,60 +1,21 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { 
-  LayoutGrid,
-  Pencil, 
-  Table, 
-  FileBarChart,
-  ArrowRight,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink
-} from 'lucide-react'
+import { LayoutGrid, Pencil, Table, FileBarChart, ArrowRight, LogOut, ChevronLeft, ChevronRight, ExternalLink, Users } from 'lucide-react'
 import { useAuth } from '../utils/AuthContext'
 
-/**
- * Sidebar Component
- * Navigation sidebar for the RTU Admin Dashboard
- * Uses RTU Blue color scheme
- */
 function Sidebar() {
   const navigate = useNavigate()
   const { logout } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
-  
-  const navItems = [
-    { 
-      path: '/admin/dashboard', 
-      label: 'Dashboard', 
-      icon: LayoutGrid 
-    },
-    { 
-      path: '/admin/survey-builder', 
-      label: 'Survey Builder', 
-      icon: Pencil 
-    },
-    { 
-      path: '/admin/surveys', 
-      label: 'Surveys', 
-      icon: Table 
-    },
-    { 
-      path: '/admin/results', 
-      label: 'Results', 
-      icon: Table 
-    },
-    { 
-      path: '/admin/reports', 
-      label: 'Reports', 
-      icon: FileBarChart 
-    },
 
-    { 
-      path: '/admin/offices',
-      label: 'Offices',
-      icon: Table
-    }
+  const navItems = [
+    { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutGrid },
+    { path: '/admin/survey-builder', label: 'Survey Builder', icon: Pencil },
+    { path: '/admin/surveys', label: 'Surveys', icon: Table },
+    { path: '/admin/results', label: 'Results', icon: Table },
+    { path: '/admin/reports', label: 'Reports', icon: FileBarChart },
+    { path: '/admin/offices', label: 'Offices', icon: Table },
+    { path: '/admin/staff-accounts', label: 'Staff Accounts', icon: Users },
   ]
 
   return (
@@ -72,7 +33,7 @@ function Sidebar() {
           )}
         </div>
       </div>
-      
+
       <nav className="sidebar-nav">
         {navItems.map((item) => (
           <NavLink
@@ -86,44 +47,21 @@ function Sidebar() {
             {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
-        
-        {/* Public Survey Link - Opens in new tab */}
+
         <button
           onClick={() => window.open('/survey', '_blank')}
           className="nav-link"
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            width: '100%',
-            cursor: 'pointer',
-            textAlign: 'left',
-            fontSize: 'inherit',
-            fontWeight: 'inherit',
-            color: 'rgba(255, 255, 255, 0.85)'
-          }}
+          style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left', fontSize: 'inherit', fontWeight: 'inherit', color: 'rgba(255,255,255,0.85)' }}
           title={collapsed ? 'Public Survey Link' : ''}
         >
           <ExternalLink size={20} />
           {!collapsed && <span>Public Survey Link</span>}
         </button>
-        
-        {/* Logout Button */}
+
         <button
-          onClick={() => {
-            logout()
-            navigate('/login')
-          }}
+          onClick={() => { logout(); navigate('/login') }}
           className="nav-link"
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            width: '100%',
-            cursor: 'pointer',
-            marginTop: 'auto',
-            fontSize: 'inherit',
-            fontWeight: 'inherit',
-            color: 'rgba(255, 255, 255, 0.85)'
-          }}
+          style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer', marginTop: 'auto', fontSize: 'inherit', fontWeight: 'inherit', color: 'rgba(255,255,255,0.85)' }}
           title={collapsed ? 'Logout' : ''}
         >
           <LogOut size={20} />
@@ -132,25 +70,9 @@ function Sidebar() {
         </button>
       </nav>
 
-      {/* Collapse Toggle */}
-      <button 
+      <button
         onClick={() => setCollapsed(!collapsed)}
-        style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: collapsed ? '28px' : '-12px',
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          backgroundColor: '#FFD700',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#0033A0',
-          zIndex: 1001
-        }}
+        style={{ position: 'absolute', bottom: '20px', right: collapsed ? '28px' : '-12px', width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#FFD700', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0033A0', zIndex: 1001 }}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

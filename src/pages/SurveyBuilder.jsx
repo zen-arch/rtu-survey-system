@@ -14,10 +14,6 @@ import { supabase } from '../utils/supabaseClient'
 
 const PERIODS = ['Monthly', 'Quarterly', 'Yearly']
 
-/**
- * SurveyBuilder Page Component
- * Two-column layout: left for building, right for live preview
- */
 function SurveyBuilder() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -35,14 +31,16 @@ function SurveyBuilder() {
 
   const [hasError, setHasError] = useState(false)
 
-  // Fetch offices dynamically from Supabase
   useEffect(() => {
     const fetchOffices = async () => {
       const { data, error } = await supabase
         .from('offices')
         .select('office_id, office_name')
         .order('office_name', { ascending: true })
-      if (!error && data) setOffices(data)
+      if (!error && data) {
+        setOffices(data)
+        console.log('Fetched offices:', data)
+      }
     }
     fetchOffices()
   }, [])
@@ -52,15 +50,29 @@ function SurveyBuilder() {
     try {
       if (location.state && location.state.editingSurvey) {
         const editData = location.state.editingSurvey
+
+        // Parse questions — Supabase stores them as a JSON string
+        let parsedQuestions = []
+        if (Array.isArray(editData.questions)) {
+          parsedQuestions = editData.questions
+        } else if (typeof editData.questions === 'string') {
+          try {
+            parsedQuestions = JSON.parse(editData.questions) || []
+          } catch {
+            parsedQuestions = []
+          }
+        }
+
         setSurvey({
           title: editData.title || '',
           instructions: editData.instructions || '',
-          targetOffice: editData.targetOffice || '',
+          // surveys table uses target_office; fall back to office for staff-created surveys
+          targetOffice: editData.target_office || editData.office || editData.targetOffice || '',
           period: editData.period || 'Monthly',
           status: editData.status || 'draft',
-          questions: editData.questions || [],
+          questions: parsedQuestions,
           id: editData.id || null,
-          createdDate: editData.createdDate || null
+          createdDate: editData.created_at || editData.createdDate || null
         })
       }
     } catch (error) {
@@ -137,48 +149,46 @@ function SurveyBuilder() {
 
   const handleSaveDraft = async () => {
     const surveyData = {
-      id: survey.id || 'S' + String(Date.now()).slice(-6),
       title: survey.title || 'Untitled Survey',
       instructions: survey.instructions || '',
       target_office: survey.targetOffice,
       period: survey.period,
       status: 'draft',
-      questions: survey.questions
+      questions: JSON.stringify(survey.questions),
+      updated_at: new Date().toISOString()
     }
 
     if (survey.id) {
-      await supabase
-        .from('surveys')
-        .update(surveyData)
-        .eq('id', survey.id)
+      await supabase.from('surveys').update(surveyData).eq('id', survey.id)
     } else {
-      await supabase
-        .from('surveys')
-        .insert(surveyData)
+      await supabase.from('surveys').insert({
+        ...surveyData,
+        id: 'S' + String(Date.now()).slice(-6),
+        created_at: new Date().toISOString()
+      })
     }
     navigate('/admin/surveys')
   }
 
   const handlePublish = async () => {
     const surveyData = {
-      id: survey.id || 'S' + String(Date.now()).slice(-6),
       title: survey.title || 'Untitled Survey',
       instructions: survey.instructions || '',
       target_office: survey.targetOffice,
       period: survey.period,
-      status: 'active',
-      questions: survey.questions
+      status: 'published',
+      questions: JSON.stringify(survey.questions),
+      updated_at: new Date().toISOString()
     }
 
     if (survey.id) {
-      await supabase
-        .from('surveys')
-        .update(surveyData)
-        .eq('id', survey.id)
+      await supabase.from('surveys').update(surveyData).eq('id', survey.id)
     } else {
-      await supabase
-        .from('surveys')
-        .insert(surveyData)
+      await supabase.from('surveys').insert({
+        ...surveyData,
+        id: 'S' + String(Date.now()).slice(-6),
+        created_at: new Date().toISOString()
+      })
     }
     navigate('/admin/surveys')
   }
@@ -274,7 +284,7 @@ function SurveyBuilder() {
             />
           </div>
 
-          {/* Target Office — now dynamic from Supabase */}
+          {/* Target Office */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#6c757d', marginBottom: '8px' }}>
               Target Office
@@ -354,7 +364,6 @@ function SurveyBuilder() {
               </button>
             </div>
 
-            {/* Question Cards */}
             {survey.questions.map((question, index) => (
               <div
                 key={question.id}
@@ -507,8 +516,6 @@ function SurveyBuilder() {
                 border: '2px solid #0033A0', borderRadius: '8px',
                 fontSize: '14px', fontWeight: '600', cursor: 'pointer'
               }}
-              onMouseOver={(e) => e.target.style.borderColor = '#FFD700'}
-              onMouseOut={(e) => e.target.style.borderColor = '#0033A0'}
             >
               Publish Survey
             </button>
@@ -588,7 +595,7 @@ function SurveyBuilder() {
 
                   {q.type === 'multiple' && (
                     <div>
-                      {q.options.map((opt, i) => (
+                      {(q.options || []).map((opt, i) => (
                         <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '13px', color: '#1A1A2E' }}>
                           <input type="radio" name={`q-${q.id}`} />
                           {opt}

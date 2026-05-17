@@ -8,8 +8,10 @@ function Surveys() {
   const [searchTerm, setSearchTerm] = useState('')
   const [surveys, setSurveys] = useState([])
   const [loading, setLoading] = useState(true)
+  const [viewingSurvey, setViewingSurvey] = useState(null)
 
   useEffect(() => { fetchSurveys() }, [])
+
 
   const fetchSurveys = async () => {
     setLoading(true)
@@ -33,16 +35,31 @@ function Surveys() {
     const styles = {
       draft: { backgroundColor: '#6c757d', color: '#FFFFFF' },
       active: { backgroundColor: '#16A34A', color: '#FFFFFF' },
+      published: { backgroundColor: '#16A34A', color: '#FFFFFF' },
       closed: { backgroundColor: '#DC2626', color: '#FFFFFF' }
     }
-    return <span style={{ ...(styles[status]||styles.draft), padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', textTransform: 'capitalize' }}>{status||'draft'}</span>
+    return (
+      <span
+        style={{
+          ...(styles[status] || styles.draft),
+          padding: '4px 12px',
+          borderRadius: '20px',
+          fontSize: '12px',
+          fontWeight: '600',
+          textTransform: 'capitalize'
+        }}
+      >
+        {status || 'draft'}
+      </span>
+    )
   }
 
-  const handleClose = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'closed' ? 'active' : 'closed'
+  const handlePublish = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published'
     await supabase.from('surveys').update({ status: newStatus }).eq('id', id)
     setSurveys(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s))
   }
+
 
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this survey?')) {
@@ -51,13 +68,18 @@ function Surveys() {
     }
   }
 
-  const handleEdit = (survey) => { navigate('/admin/survey-builder', { state: { editingSurvey: survey } }) }
-  const handleView = (survey) => { alert('Survey: ' + survey.title + ' Office: ' + survey.target_office) }
+  const handleEdit = (survey) => {
+    navigate('/admin/survey-builder', { state: { editingSurvey: survey } })
+  }
+
+  const handleView = (survey) => { setViewingSurvey(survey) }
+
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}><p>Loading surveys...</p></div>
 
   return (
     <div>
+
       <div className='page-header'>
         <h1 className='page-title'>Survey Management</h1>
         <p className='page-subtitle'>Manage and track all your surveys</p>
@@ -98,7 +120,14 @@ function Surveys() {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                       <button onClick={() => handleView(survey)} title='View' style={{ padding: '8px', backgroundColor: 'transparent', border: '1px solid #E0E7FF', borderRadius: '6px', cursor: 'pointer' }}><Eye size={16} color='#0033A0' /></button>
                       <button onClick={() => handleEdit(survey)} title='Edit' style={{ padding: '8px', backgroundColor: 'transparent', border: '1px solid #E0E7FF', borderRadius: '6px', cursor: 'pointer' }}><Edit2 size={16} color='#6c757d' /></button>
-                      <button onClick={() => handleClose(survey.id, survey.status)} title={survey.status === 'closed' ? 'Reopen' : 'Close'} style={{ padding: '8px', backgroundColor: 'transparent', border: '1px solid #E0E7FF', borderRadius: '6px', cursor: 'pointer' }}>{survey.status === 'closed' ? <Check size={16} color='#16A34A' /> : <X size={16} color='#ffc107' />}</button>
+                      <button 
+                        onClick={() => handlePublish(survey.id, survey.status)} 
+                        title={survey.status === 'published' ? 'Unpublish' : 'Publish'} 
+                        style={{ padding: '8px', backgroundColor: 'transparent', border: '1px solid #E0E7FF', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        {survey.status === 'published' ? <X size={16} color='#DC2626' /> : <Check size={16} color='#16A34A' />}
+                      </button>
+
                       <button onClick={() => handleDelete(survey.id)} title='Delete' style={{ padding: '8px', backgroundColor: 'transparent', border: '1px solid #E0E7FF', borderRadius: '6px', cursor: 'pointer' }}><Trash2 size={16} color='#DC2626' /></button>
                     </div>
                   </td>
@@ -121,6 +150,67 @@ function Surveys() {
           </div>
         </div>
       </div>
+
+      {viewingSurvey && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px', maxWidth: '600px', width: '90%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 16px 48px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0033A0', margin: 0 }}>{viewingSurvey.title}</h2>
+              <button onClick={() => setViewingSurvey(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: '#6c757d' }}>×</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              {[
+                { label: 'Office', value: viewingSurvey.target_office || viewingSurvey.office || 'N/A' },
+                { label: 'Status', value: viewingSurvey.status || 'draft' },
+                { label: 'Created', value: viewingSurvey.created_at ? new Date(viewingSurvey.created_at).toLocaleDateString() : 'N/A' },
+                { label: 'Survey ID', value: viewingSurvey.id }
+              ].map((item, i) => (
+                <div key={i} style={{ backgroundColor: '#F5F7FA', borderRadius: '8px', padding: '12px' }}>
+                  <p style={{ fontSize: '11px', color: '#6c757d', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.label}</p>
+                  <p style={{ fontSize: '14px', fontWeight: '600', color: '#1A1A2E', margin: 0, wordBreak: 'break-all' }}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#0033A0', marginBottom: '16px' }}>Questions</h3>
+            {(() => {
+              try {
+                const questions = JSON.parse(viewingSurvey.questions || '[]')
+                if (!questions.length) return <p style={{ color: '#6c757d', fontSize: '14px' }}>No questions found.</p>
+                return questions.map((q, i) => (
+                  <div key={i} style={{ backgroundColor: '#F5F7FA', borderRadius: '8px', padding: '16px', marginBottom: '12px' }}>
+                    <p style={{ fontSize: '12px', color: '#0033A0', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      Q{i + 1} · {q.type === 'rating' ? 'Rating' : q.type === 'multiple_choice' ? 'Multiple Choice' : 'Text'}
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#1A1A2E', margin: 0, marginBottom: q.options?.length ? '8px' : 0 }}>{q.text}</p>
+                    {q.type === 'rating' && (
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                        {[1,2,3,4,5].map(s => <span key={s} style={{ fontSize: '20px', color: '#FFD700' }}>★</span>)}
+                      </div>
+                    )}
+                    {q.options?.length > 0 && (
+                      <ul style={{ margin: '8px 0 0', paddingLeft: '20px' }}>
+                        {q.options.map((opt, oi) => <li key={oi} style={{ fontSize: '13px', color: '#6c757d', marginBottom: '4px' }}>{opt}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                ))
+              } catch {
+                return <p style={{ color: '#DC2626', fontSize: '14px' }}>Could not parse questions.</p>
+              }
+            })()}
+
+            <button
+              onClick={() => setViewingSurvey(null)}
+              style={{ width: '100%', padding: '12px', backgroundColor: '#0033A0', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '16px' }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
