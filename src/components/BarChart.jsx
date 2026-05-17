@@ -29,6 +29,9 @@ function BarChartComponent({ data }) {
   // Custom tooltip for better UX
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const value = payload[0]?.value
+      const numericValue = (value !== null && value !== undefined) ? Number(value) : 0
+
       return (
         <div style={{
           backgroundColor: '#fff',
@@ -39,7 +42,7 @@ function BarChartComponent({ data }) {
         }}>
           <p style={{ fontWeight: 600, marginBottom: '4px' }}>{label}</p>
           <p style={{ color: '#0033A0', fontSize: '14px' }}>
-            Avg Rating: <strong>{payload[0].value.toFixed(2)}</strong>
+            Avg Rating: <strong>{numericValue.toFixed(2)}</strong>
           </p>
           <p style={{ color: '#6c757d', fontSize: '12px' }}>
             Responses: {payload[0].payload.count}
@@ -122,4 +125,3 @@ function BarChartComponent({ data }) {
 }
 
 export default BarChartComponent
-
