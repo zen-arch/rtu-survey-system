@@ -75,13 +75,33 @@ function PublicSurvey({ startAtForm }) {
   }
 
   useEffect(() => {
-    if (location.state?.skipToSurvey && location.state?.email) {
-      const { email, clientType, office, surveyId } = location.state
-      setFormData({ email: email || '', clientType: clientType || '', office: office || '' })
-      if (surveyId) fetchSurveyQuestions(surveyId)
-      setShowSurvey(true)
-      setCurrentStep(2)
+    const init = async () => {
+      if (location.state?.skipToSurvey && location.state?.email) {
+        const { email, clientType, office, surveyId } = location.state
+        setFormData({ email: email || '', clientType: clientType || '', office: office || '' })
+        if (surveyId) await fetchSurveyQuestions(surveyId)
+
+        // Check if already submitted for this office
+        const { data: existing } = await supabase
+          .from('survey_responses')
+          .select('id, status')
+          .eq('respondent_email', email)
+          .eq('office', office)
+          .maybeSingle()
+
+        // ✅ FIXED: match exact status string set by ResultsTable.jsx
+        if (existing && existing.status !== 'Resubmit Allowed') {
+          setAlreadySubmitted(true)
+          setShowSurvey(true)
+          return
+        }
+
+        // No existing submission, or admin allowed resubmit — proceed to survey
+        setShowSurvey(true)
+        setCurrentStep(2)
+      }
     }
+    init()
   }, [])
 
   useEffect(() => {
@@ -195,63 +215,97 @@ function PublicSurvey({ startAtForm }) {
         if (error) throw error
         navigate('/student/dashboard', { state: { email: formData.email, clientType: formData.clientType } })
       } else {
-        const { error } = await supabase
+        // Check if resubmitting — if so, UPDATE the existing row instead of INSERT
+        const { data: existing } = await supabase
           .from('survey_responses')
-          .insert({
-            respondent_email: anonymous ? 'anonymous' : formData.email,
-            client_type: formData.clientType,
-            office: formData.office,
-            rating_overall: ratings.overallSatisfaction,
-            rating_staff: ratings.staffProfessionalism,
-            rating_speed: ratings.speedEfficiency,
-            rating_cleanliness: ratings.cleanlinessComfort,
-            rating_recommendation: ratings.recommendation,
-            average_rating: averageRating,
-            visit_type: visitType,
-            feedback: feedback,
-            status: 'Normal',
-            custom_answers: customQuestions.length > 0 ? JSON.stringify({
-              questions: customQuestions,
-              answers: customAnswers
-            }) : null
-          })
-        if (error) throw error
+          .select('id, status')
+          .eq('respondent_email', formData.email)
+          .eq('office', formData.office)
+          .maybeSingle()
 
-        const key = 'rtu_submitted_' + formData.email + '_' + formData.office
-        localStorage.setItem(key, new Date().toISOString())
+        if (existing && existing.status === 'Resubmit Allowed') {
+          // Overwrite the existing response and reset status to Normal
+          const { error } = await supabase
+            .from('survey_responses')
+            .update({
+              client_type: formData.clientType,
+              rating_overall: ratings.overallSatisfaction,
+              rating_staff: ratings.staffProfessionalism,
+              rating_speed: ratings.speedEfficiency,
+              rating_cleanliness: ratings.cleanlinessComfort,
+              rating_recommendation: ratings.recommendation,
+              average_rating: averageRating,
+              visit_type: visitType,
+              feedback: feedback,
+              status: 'Normal',
+              submitted_at: new Date().toISOString(),
+              custom_answers: customQuestions.length > 0 ? JSON.stringify({
+                questions: customQuestions,
+                answers: customAnswers
+              }) : null
+            })
+            .eq('id', existing.id)
+          if (error) throw error
+        } else {
+          // Fresh insert
+          const { error } = await supabase
+            .from('survey_responses')
+            .insert({
+              respondent_email: anonymous ? 'anonymous' : formData.email,
+              client_type: formData.clientType,
+              office: formData.office,
+              rating_overall: ratings.overallSatisfaction,
+              rating_staff: ratings.staffProfessionalism,
+              rating_speed: ratings.speedEfficiency,
+              rating_cleanliness: ratings.cleanlinessComfort,
+              rating_recommendation: ratings.recommendation,
+              average_rating: averageRating,
+              visit_type: visitType,
+              feedback: feedback,
+              status: 'Normal',
+              custom_answers: customQuestions.length > 0 ? JSON.stringify({
+                questions: customQuestions,
+                answers: customAnswers
+              }) : null
+            })
+          if (error) throw error
 
-        try {
-          let clientId = null
-          const { data: existingClient } = await supabase
-            .from('clients')
-            .select('client_id, email, type')
-            .eq('email', anonymous ? 'anonymous' : formData.email)
-            .maybeSingle()
+          const key = 'rtu_submitted_' + formData.email + '_' + formData.office
+          localStorage.setItem(key, new Date().toISOString())
 
-          if (existingClient) {
-            clientId = existingClient.client_id
-          } else {
-            const { data: newClient, error: clientError } = await supabase
+          try {
+            let clientId = null
+            const { data: existingClient } = await supabase
               .from('clients')
-              .insert({ email: anonymous ? 'anonymous' : formData.email, type: formData.clientType })
-              .select('client_id')
-              .single()
-            if (!clientError) clientId = newClient.client_id
-          }
+              .select('client_id, email, type')
+              .eq('email', anonymous ? 'anonymous' : formData.email)
+              .maybeSingle()
 
-          if (clientId) {
-            const { data: surveyFormData, error: formError } = await supabase
-              .from('survey_form')
-              .insert({ client_id: clientId, date: new Date().toISOString().split('T')[0], service_availed: formData.office, rate_scale: Math.round(parseFloat(averageRating)) })
-              .select('survey_id')
-              .single()
-
-            if (!formError && surveyFormData) {
-              await supabase.from('survey_response').insert({ response_id: 'R' + Date.now(), survey_id: surveyFormData.survey_id, feedback: feedback, suggestions: '' })
+            if (existingClient) {
+              clientId = existingClient.client_id
+            } else {
+              const { data: newClient, error: clientError } = await supabase
+                .from('clients')
+                .insert({ email: anonymous ? 'anonymous' : formData.email, type: formData.clientType })
+                .select('client_id')
+                .single()
+              if (!clientError) clientId = newClient.client_id
             }
+
+            if (clientId) {
+              const { data: surveyFormData, error: formError } = await supabase
+                .from('survey_form')
+                .insert({ client_id: clientId, date: new Date().toISOString().split('T')[0], service_availed: formData.office, rate_scale: Math.round(parseFloat(averageRating)) })
+                .select('survey_id')
+                .single()
+
+              if (!formError && surveyFormData) {
+                await supabase.from('survey_response').insert({ response_id: 'R' + Date.now(), survey_id: surveyFormData.survey_id, feedback: feedback, suggestions: '' })
+              }
+            }
+          } catch (normalizedError) {
+            console.error('Normalized tables error:', normalizedError)
           }
-        } catch (normalizedError) {
-          console.error('Normalized tables error:', normalizedError)
         }
 
         setSubmitted(true)
@@ -297,6 +351,28 @@ function PublicSurvey({ startAtForm }) {
           <p style={{ fontSize: '14px', color: '#6c757d', marginBottom: '24px' }}>Your response helps RTU improve its services.</p>
           <button onClick={() => navigate('/student/dashboard', { state: { email: formData.email, clientType: formData.clientType } })} style={{ width: '100%', padding: '14px', backgroundColor: '#0033A0', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginBottom: '12px' }}>
             Go to My Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (showSurvey && alreadySubmitted) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#F5F7FA' }}>
+        <Header />
+        <div style={{ maxWidth: '500px', margin: '60px auto', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '40px', textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#FFF3CD', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <AlertTriangle size={40} color="#FFD700" />
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#0033A0', marginBottom: '12px' }}>Already Submitted</h2>
+          <p style={{ fontSize: '15px', color: '#1A1A2E', marginBottom: '8px' }}>You have already submitted a response for this office.</p>
+          <p style={{ fontSize: '13px', color: '#6c757d', marginBottom: '24px' }}>Please contact the admin if you need to resubmit.</p>
+          <button
+            onClick={() => navigate('/student/dashboard', { state: { email: formData.email, clientType: formData.clientType } })}
+            style={{ width: '100%', padding: '14px', backgroundColor: '#0033A0', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Go Back to Dashboard
           </button>
         </div>
       </div>
@@ -437,4 +513,3 @@ function PublicSurvey({ startAtForm }) {
 }
 
 export default PublicSurvey
-
