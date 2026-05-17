@@ -5,7 +5,6 @@ import {
   Pencil, 
   Table, 
   FileBarChart,
-  Settings,
   ArrowRight,
   LogOut,
   ChevronLeft,
@@ -50,11 +49,7 @@ function Sidebar() {
       label: 'Reports', 
       icon: FileBarChart 
     },
-    { 
-      path: '/admin/settings',
-      label: 'Settings',
-      icon: Settings
-    },
+
     { 
       path: '/admin/offices',
       label: 'Offices',
@@ -101,7 +96,10 @@ function Sidebar() {
             border: 'none', 
             width: '100%',
             cursor: 'pointer',
-            textAlign: 'left'
+            textAlign: 'left',
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            color: 'rgba(255, 255, 255, 0.85)'
           }}
           title={collapsed ? 'Public Survey Link' : ''}
         >
@@ -121,7 +119,10 @@ function Sidebar() {
             border: 'none', 
             width: '100%',
             cursor: 'pointer',
-            marginTop: 'auto'
+            marginTop: 'auto',
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            color: 'rgba(255, 255, 255, 0.85)'
           }}
           title={collapsed ? 'Logout' : ''}
         >
