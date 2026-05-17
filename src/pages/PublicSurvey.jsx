@@ -139,13 +139,6 @@ function PublicSurvey({ startAtForm }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const validateStep3 = () => {
-    const newErrors = {}
-    if (!visitType) newErrors.visitType = 'Please select an option'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const handleNextLandingStep = async () => {
     if (landingStep === 1) {
       if (!validateLandingStep1()) return
@@ -169,20 +162,18 @@ function PublicSurvey({ startAtForm }) {
   }
 
   const handleSubmit = async () => {
-    if (!validateStep3()) return
-
     const averageRating = (() => {
-    if (customQuestions && customQuestions.length > 0) {
-      const ratingAnswers = customQuestions
-        .filter(q => q.type === 'rating')
-        .map(q => Number(customAnswers[q.id] || 0))
-      if (ratingAnswers.length > 0) {
-        return (ratingAnswers.reduce((sum, val) => sum + val, 0) / ratingAnswers.length).toFixed(1)
+      if (customQuestions && customQuestions.length > 0) {
+        const ratingAnswers = customQuestions
+          .filter(q => q.type === 'rating')
+          .map(q => Number(customAnswers[q.id] || 0))
+        if (ratingAnswers.length > 0) {
+          return (ratingAnswers.reduce((sum, val) => sum + val, 0) / ratingAnswers.length).toFixed(1)
+        }
+        return '5.0'
       }
-      return '5.0'
-    }
-    return ((ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5).toFixed(1)
-  })()
+      return ((ratings.overallSatisfaction + ratings.staffProfessionalism + ratings.speedEfficiency + ratings.cleanlinessComfort + ratings.recommendation) / 5).toFixed(1)
+    })()
 
     try {
       if (isEditing && editingId) {
@@ -317,19 +308,12 @@ function PublicSurvey({ startAtForm }) {
           <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#FFFFFF' }}>RTU Client Satisfaction Survey System</h1>
         </div>
         <div style={{ maxWidth: '700px', margin: '40px auto', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
-          <StepIndicator currentStep={currentStep} steps={['Your Info', 'Rate Our Service', 'Your Feedback']} />
-          {currentStep >= 2 && (
-            <div style={{ backgroundColor: '#F5F7FA', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Check size={20} color="#16A34A" />
-              <span style={{ color: '#16A34A', fontWeight: '500' }}>Your Info Submitted</span>
-              <span style={{ color: '#6c757d', marginLeft: 'auto' }}>{formData.clientType} - {formData.office}</span>
-            </div>
-          )}
+          <StepIndicator currentStep={currentStep - 1} steps={['Rate Our Service', 'Your Feedback']} />
 
           {currentStep === 2 && (
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#0033A0', marginBottom: '24px' }}>
-                {isEditing ? 'Step 2: Update Your Rating' : 'Step 2: Rate Our Service'}
+                {isEditing ? 'Step 1: Update Your Rating' : 'Step 1: Rate Our Service'}
               </h2>
               {customQuestions.length > 0 ? (
                 customQuestions.map((q, index) => (
@@ -380,16 +364,7 @@ function PublicSurvey({ startAtForm }) {
 
           {currentStep === 3 && (
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#0033A0', marginBottom: '24px' }}>Step 3: Your Feedback</h2>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1A1A2E', marginBottom: '12px' }}>Which best describes your visit today? <span style={{ color: '#DC2626' }}>*</span></label>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {VISIT_TYPES.map(type => (
-                    <button key={type} type="button" onClick={() => { setVisitType(type); setErrors({ ...errors, visitType: '' }) }} style={{ padding: '10px 16px', borderRadius: '20px', border: visitType === type ? '2px solid #FFD700' : '2px solid #E0E7FF', backgroundColor: visitType === type ? '#FFD700' : '#FFFFFF', color: visitType === type ? '#0033A0' : '#1A1A2E', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>{type}</button>
-                  ))}
-                </div>
-                {errors.visitType && <p style={{ color: '#DC2626', fontSize: '12px', marginTop: '8px' }}>{errors.visitType}</p>}
-              </div>
+              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#0033A0', marginBottom: '24px' }}>Step 2: Your Feedback</h2>
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#1A1A2E', marginBottom: '8px' }}>Any additional comments? <span style={{ color: '#6c757d', fontWeight: '400' }}>(optional)</span></label>
                 <textarea placeholder="Type your feedback here..." value={feedback} onChange={(e) => { if (e.target.value.length <= 500) setFeedback(e.target.value) }} style={{ width: '100%', minHeight: '120px', padding: '12px 16px', border: '2px solid #E0E7FF', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
