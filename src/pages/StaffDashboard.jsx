@@ -576,36 +576,38 @@ function StaffDashboard() {
             </div>
           </>
         )}
+        
+{activeView === 'flagged' && (
+  <>
+    <div style={{ marginBottom: '24px' }}>
+      <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>Flagged Responses</h1>
+      <p style={{ color: '#6c757d', fontSize: '14px', marginTop: '4px' }}>{selectedOffice} — responses flagged by admin for attention</p>
+    </div>
 
-        {/* FLAGGED VIEW */}
-        {activeView === 'flagged' && (
-          <>
-            <div style={{ marginBottom: '24px' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>Flagged Responses</h1>
-              <p style={{ color: '#6c757d', fontSize: '14px', marginTop: '4px' }}>{selectedOffice} — responses flagged by admin for attention</p>
-            </div>
-
-            {flaggedCount === 0 ? (
-              <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '60px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #E0E7FF' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-                <p style={{ fontSize: '18px', fontWeight: '600', color: '#16A34A', marginBottom: '8px' }}>No flagged responses</p>
-                <p style={{ fontSize: '14px', color: '#6c757d' }}>All responses for your office are in good standing.</p>
-              </div>
-            ) : (
-              <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #E0E7FF', overflow: 'hidden' }}>
-                <ResponseTable
-                  responses={responses.filter(r => r.status === 'Flagged')}
-                  formatDate={formatDate}
-                  renderStars={renderStars}
-                  getStatusStyle={getStatusStyle}
-                  onSelect={setSelectedResponse}
-                  loading={loading}
-                />
-              </div>
-            )}
-          </>
-        )}
-
+    {flaggedCount === 0 ? (
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '60px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #E0E7FF' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+        <p style={{ fontSize: '18px', fontWeight: '600', color: '#16A34A', marginBottom: '8px' }}>No flagged responses</p>
+        <p style={{ fontSize: '14px', color: '#6c757d' }}>All responses for your office are in good standing.</p>
+      </div>
+    ) : (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {responses.filter(r => r.status === 'Flagged').map(r => (
+          <FlaggedCard
+            key={r.id}
+            response={r}
+            formatDate={formatDate}
+            onResolved={(updatedResponse) => {
+              setResponses(prev =>
+                prev.map(x => x.id === updatedResponse.id ? updatedResponse : x)
+              )
+            }}
+          />
+        ))}
+      </div>
+    )}
+  </>
+)}
         {/* MY SURVEYS VIEW */}
         {activeView === 'surveys' && (
           <>
@@ -989,6 +991,110 @@ function ResponseTable({ responses, formatDate, renderStars, getStatusStyle, onS
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+function FlaggedCard({ response, formatDate, onResolved }) {
+  const [showResolveBox, setShowResolveBox] = useState(false)
+  const [resolutionNote, setResolutionNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [done, setDone] = useState(!!response.resolution_note)
+
+  const handleSubmitResolution = async () => {
+    if (!resolutionNote.trim()) return
+    setSubmitting(true)
+    const { error } = await supabase
+      .from('survey_responses')
+      .update({ resolution_note: resolutionNote.trim() })
+      .eq('id', response.id)
+    setSubmitting(false)
+    if (error) {
+      alert('Failed to submit. Please try again.')
+      return
+    }
+    setDone(true)
+    setShowResolveBox(false)
+    onResolved({ ...response, resolution_note: resolutionNote.trim() })
+  }
+
+  return (
+    <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', border: '2px solid #DC2626', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <p style={{ fontSize: '15px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>{response.respondent_email}</p>
+          <p style={{ fontSize: '13px', color: '#6c757d', marginTop: '4px' }}>{response.client_type} · {formatDate(response.submitted_at)}</p>
+        </div>
+        <span style={{ backgroundColor: '#DC2626', color: '#fff', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
+          🚩 Flagged
+        </span>
+      </div>
+
+      {response.flag_reason && (
+        <div style={{ backgroundColor: '#FEF2F2', borderRadius: '8px', padding: '14px', marginBottom: '16px', borderLeft: '4px solid #DC2626' }}>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#DC2626', marginBottom: '6px', textTransform: 'uppercase' }}>🚩 Reason from Admin</p>
+          <p style={{ fontSize: '14px', color: '#1A1A2E', margin: 0 }}>{response.flag_reason}</p>
+        </div>
+      )}
+
+      {done && response.resolution_note && (
+        <div style={{ backgroundColor: '#F0FDF4', borderRadius: '8px', padding: '14px', marginBottom: '16px', borderLeft: '4px solid #16A34A' }}>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#16A34A', marginBottom: '6px', textTransform: 'uppercase' }}>✅ Your Resolution Note</p>
+          <p style={{ fontSize: '14px', color: '#1A1A2E', margin: 0 }}>{response.resolution_note}</p>
+          <p style={{ fontSize: '12px', color: '#6c757d', marginTop: '8px' }}>Waiting for admin to confirm and unflag.</p>
+        </div>
+      )}
+
+      {!done && (
+        <>
+          {!showResolveBox ? (
+            <button
+              onClick={() => setShowResolveBox(true)}
+              style={{ padding: '10px 24px', backgroundColor: '#0033A0', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              📝 Submit Resolution
+            </button>
+          ) : (
+            <div style={{ marginTop: '8px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#1A1A2E', marginBottom: '8px' }}>
+                Resolution Note <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <textarea
+                placeholder="Describe what actions were taken to resolve this issue..."
+                value={resolutionNote}
+                onChange={e => setResolutionNote(e.target.value)}
+                rows={4}
+                style={{ width: '100%', padding: '12px', border: '2px solid #E0E7FF', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', marginBottom: '12px', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setShowResolveBox(false)}
+                  style={{ flex: 1, padding: '10px', backgroundColor: '#F5F7FA', color: '#6c757d', border: '1px solid #E0E7FF', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitResolution}
+                  disabled={!resolutionNote.trim() || submitting}
+                  style={{
+                    flex: 2,
+                    padding: '10px',
+                    backgroundColor: resolutionNote.trim() ? '#0033A0' : '#E0E7FF',
+                    color: resolutionNote.trim() ? '#fff' : '#adb5bd',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: resolutionNote.trim() ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  {submitting ? '⏳ Submitting...' : '✅ Submit Resolution'}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

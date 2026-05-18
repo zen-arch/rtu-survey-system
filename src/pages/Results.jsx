@@ -63,34 +63,19 @@ function Results() {
       return
     }
 
-    // Refetch ALL data fresh from Supabase
     await fetchData()
-    
-    // Notify Dashboard to also refetch
     window.dispatchEvent(new CustomEvent('responseDeleted'))
-    
     showNotification('🗑️ Response deleted successfully')
   }
 
-  const handleFlagResponse = async (row) => {
-    const newStatus = row.status === 'Flagged' ? 'Normal' : 'Flagged'
-    
-    const { error } = await supabase
-      .from('survey_responses')
-      .update({ status: newStatus })
-      .eq('id', row.id)
-
-    if (error) {
-      showNotification('❌ Failed to update status')
-      return
-    }
-
+  // Just update local state — ResultsTable handles the Supabase update itself
+  const handleFlagResponse = (updatedRow, isFlagged) => {
     setResponses(prev =>
-      prev.map(r => r.id === row.id ? { ...r, status: newStatus } : r)
+      prev.map(r => r.id === updatedRow.id ? { ...r, ...updatedRow } : r)
     )
     showNotification(
-      newStatus === 'Flagged' 
-        ? '🚩 Response flagged for review' 
+      isFlagged
+        ? '🚩 Response flagged for review'
         : '✅ Response unflagged'
     )
   }

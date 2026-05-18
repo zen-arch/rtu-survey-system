@@ -79,7 +79,7 @@ function StudentDashboard() {
     const { data } = await supabase
       .from('surveys')
       .select('*')
-      .eq('status', 'active')
+      .eq('status', 'published')  // ✅ FIXED: was 'active'
     setAvailableSurveys(data || [])
   }
 
